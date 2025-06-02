@@ -22,29 +22,37 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Stop Existing Container') {
             steps {
                 script {
-                    // Stop and remove existing container if it exists
-                    bat """
-                    docker rm -f ${CONTAINER_NAME} || true
-                    """
-
-                    // Run the new container
-                    bat """
-                    docker run -d -p ${APP_PORT}:${APP_PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}
-                    """
+                    // Try to stop and remove container, ignore errors if container doesn't exist
+                    bat '''
+                    docker ps -a -q -f name=%CONTAINER_NAME% > container_id.txt
+                    set /p CONTAINER_ID=<container_id.txt
+                    if not "%CONTAINER_ID%"=="" (
+                        docker rm -f %CONTAINER_NAME%
+                    ) else (
+                        echo No existing container to remove.
+                    )
+                    del container_id.txt
+                    '''
                 }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                bat "docker run -d -p %APP_PORT%:%APP_PORT% --name %CONTAINER_NAME% %IMAGE_NAME%"
             }
         }
     }
 
     post {
         success {
-            echo "Application deployed successfully and running on port ${APP_PORT}."
+            echo "Deployment successful! App running on port ${APP_PORT}."
         }
         failure {
-            echo "Build or deployment failed. Please check the logs for details."
+            echo "Build or deployment failed. Check logs."
         }
     }
 }
