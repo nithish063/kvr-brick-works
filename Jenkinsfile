@@ -22,15 +22,13 @@ pipeline {
 
         stage('Stop Existing Container') {
             steps {
-                bat '''
-                docker ps -a -q -f name=%CONTAINER_NAME% > container_id.txt
-                set /p CONTAINER_ID=<container_id.txt
-                if not "%CONTAINER_ID%"=="" (
+                powershell '''
+                $containerIds = docker ps -a -q -f "name=%CONTAINER_NAME%"
+                if ($containerIds) {
                     docker rm -f %CONTAINER_NAME%
-                ) else (
-                    echo No existing container to remove.
-                )
-                del container_id.txt
+                } else {
+                    Write-Output "No existing container to remove."
+                }
                 '''
             }
         }
