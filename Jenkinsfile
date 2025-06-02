@@ -16,27 +16,22 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}", "--no-cache")
-                }
+                bat "docker build -t %IMAGE_NAME% --no-cache ."
             }
         }
 
         stage('Stop Existing Container') {
             steps {
-                script {
-                    // Try to stop and remove container, ignore errors if container doesn't exist
-                    bat '''
-                    docker ps -a -q -f name=%CONTAINER_NAME% > container_id.txt
-                    set /p CONTAINER_ID=<container_id.txt
-                    if not "%CONTAINER_ID%"=="" (
-                        docker rm -f %CONTAINER_NAME%
-                    ) else (
-                        echo No existing container to remove.
-                    )
-                    del container_id.txt
-                    '''
-                }
+                bat '''
+                docker ps -a -q -f name=%CONTAINER_NAME% > container_id.txt
+                set /p CONTAINER_ID=<container_id.txt
+                if not "%CONTAINER_ID%"=="" (
+                    docker rm -f %CONTAINER_NAME%
+                ) else (
+                    echo No existing container to remove.
+                )
+                del container_id.txt
+                '''
             }
         }
 
@@ -49,10 +44,10 @@ pipeline {
 
     post {
         success {
-            echo "Deployment successful! App running on port ${APP_PORT}."
+            echo "✅ Deployment successful! App running on port ${APP_PORT}."
         }
         failure {
-            echo "Build or deployment failed. Check logs."
+            echo "❌ Build or deployment failed. Check logs."
         }
     }
 }
